@@ -1,0 +1,15 @@
+author: codeskyblue@gmail.com
+description: >
+        Hmm. this is a test.
+        hahaha
+
+filesets:
+    includes:
+        - start.bat
+        - README.md
+    excludes:
+        - \.git
+settings:
+        targetdir: ""
+        build: |
+            go install -v
