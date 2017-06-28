@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -22,6 +24,7 @@ func showLocalAddrs() {
 	}
 }
 
+// Listen - receive function
 func Listen(port int) error {
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if err != nil {
@@ -43,14 +46,28 @@ func Listen(port int) error {
 	}
 }
 
+// Dial - send function
 func Dial(host string, port int) error {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	//buf := bufio.NewReader(os.Stdin)
-	_, err = io.Copy(conn, os.Stdin) //, conn)
+
+	fi, _ := os.Stdin.Stat()
+
+	if (fi.Mode() & os.ModeCharDevice) == 0 {
+		// To retrieve text through | (pipe)
+		buffer, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		_, err = io.Copy(conn, bytes.NewReader(buffer))
+	} else {
+		_, err = io.Copy(conn, os.Stdin)
+	}
+
 	return err
 }
 
