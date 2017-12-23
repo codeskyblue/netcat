@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -53,21 +51,8 @@ func Dial(host string, port int) error {
 		return err
 	}
 	defer conn.Close()
-
-	fi, _ := os.Stdin.Stat()
-
-	if (fi.Mode() & os.ModeCharDevice) == 0 {
-		// To retrieve text through | (pipe)
-		buffer, err := ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		_, err = io.Copy(conn, bytes.NewReader(buffer))
-	} else {
-		_, err = io.Copy(conn, os.Stdin)
-	}
-
+	go io.Copy(os.Stdout, conn)
+	_, err = io.Copy(conn, os.Stdin)
 	return err
 }
 
@@ -76,7 +61,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Println(strings.Replace(
 			`options:
-connect to somewhere:	$name [-options] hostname port
+connect to somewhere:	$name hostname port
 listen:			$name -p port
 	-p		listen port number`,
 			"$name", filepath.Base(os.Args[0]), -1))
@@ -92,5 +77,7 @@ listen:			$name -p port
 	}
 	dialPort := 0
 	fmt.Sscanf(flag.Arg(1), "%d", &dialPort)
-	Dial(flag.Arg(0), dialPort)
+	if err := Dial(flag.Arg(0), dialPort); err != nil {
+		log.Println(err)
+	}
 }
